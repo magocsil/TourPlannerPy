@@ -1,3 +1,5 @@
+import shutil
+
 import _mysql_connector
 import mysql.connector as con
 import time
@@ -16,7 +18,7 @@ def databaseDrop():
                 global imagesAbsolutePath
                 if projectAbsolutePath != imagesAbsolutePath:
                     try:
-                        os.rmdir(imagesAbsolutePath)
+                        shutil.rmtree(imagesAbsolutePath)
                     except Exception as e:
                         print(
                             "[%s] Hiba (célkönyvtár törlése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
@@ -87,7 +89,6 @@ def databaseUpdateRemember():
                     SET value = NOT value WHERE name = 'remember'
                 """)
                 db.commit()
-                print("f")
     except con.Error as e:
         print("[%s] Hiba  (emlékező jelölőnégyzet frissítése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
         return -1
@@ -208,3 +209,56 @@ def databaseSelect(selectedElement):
     except con.Error as e:
         print("[%s] Hiba (túrák adatainak lekérése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
         return [-1]
+
+
+def databaseDeleteTour(selectedElement):
+    try:
+        with con.connect(host="localhost", user="root", password="root", database="tourplannerpy") as db:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT id FROM tourplannerpy.tours WHERE name = '%s'" % selectedElement)
+                id = cursor.fetchall()[0][0]
+                os.remove("%s\\%d.png" % (imagesAbsolutePath, id))
+                cursor.execute("DELETE FROM tourplannerpy.waypoints WHERE id = %d" % id)
+                db.commit()
+                cursor.execute("DELETE FROM tourplannerpy.tours WHERE id = %d" % id)
+                db.commit()
+                return 0
+    except con.Error as e:
+        print("[%s] Hiba (túra törlése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
+        return [-1]
+
+
+def databaseSelectLastId():
+    try:
+        with con.connect(host="localhost", user="root", password="root", database="tourplannerpy") as db:
+            with db.cursor() as cursor:
+                cursor.execute("""
+                    SELECT MAX(tourplannerpy.tours.id)
+                    FROM tourplannerpy.tours
+                """)
+                result = cursor.fetchall()
+                if result[0][0] is not None:
+                    return int(result[0][0])
+                else:
+                    return 0
+    except con.Error as e:
+        print("[%s] Hiba (legutolsó azonosító lekérése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
+        return -1
+
+
+def databaseSelectWaypoints(selectedElement):
+    try:
+        with con.connect(host="localhost", user="root", password="root", database="tourplannerpy") as db:
+            with db.cursor() as cursor:
+                cursor.execute("""
+                    SELECT location, color FROM tourplannerpy.waypoints WHERE id = %d 
+                """ % selectedElement)
+                result = cursor.fetchall()
+                if result[0] is not None:
+                    return result
+                else:
+                    return []
+    except con.Error as e:
+        print("[%s] Hiba (túrák számának lekérése): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
+        return -1
+

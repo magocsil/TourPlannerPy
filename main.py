@@ -3,7 +3,6 @@ from tkinter import *
 from tkinter import colorchooser
 from map import *
 from PIL import ImageTk, Image
-import os
 
 selectedColor = "#3B5998"
 
@@ -71,8 +70,9 @@ def addWindow():
         departure = entryDep.get()
         destination = entryDest.get()
         name = entryName.get()
-        if ((departure != "" and len(departure) <= 50) or (destination != "" and len(destination) <= 50) \
-                or len(waypoints) > 0) and len(name) <= 50 and name != "" and departure != destination:
+        mapType = mapTypes[optionMapType.get()]
+        if (((departure != "" and len(departure) <= 50) or (destination != "" and len(destination) <= 50))
+            and departure != destination or len(waypoints) > 0) and len(name) <= 50 and name != "":
             p = []
             for s in waypoints:
                 if s == departure:
@@ -81,21 +81,30 @@ def addWindow():
                     p.append(s)
             for s in p:
                 waypoints.pop(s)
-            tourInfo = directions(departure, destination, waypoints, mapTypes[optionMapType.get()], detailsPaneWidth,
-                                  mapPaneHeight)
+            tourInfo = directions(departure, destination, waypoints)
             if tourInfo[0] == "":
                 labelMessageNew.config(text="Az útvonalat nem sikerült megtervezni!", fg="red")
             elif tourInfo[0] == "waypoints":
+                for x in listOfToursVar:
+                    if x == name:
+                        name += "*"
                 newTour.destroy()
                 labelMessageMain.config(text="Helyszínek jelölve!", fg="green")
                 if databaseInsert(name, departure, destination, tourInfo, waypoints) == 0:
                     updateList(name)
+                    staticMap(tourInfo[0], tourInfo[1], tourInfo[3], tourInfo[2], mapType,
+                              detailsPaneWidth, mapPaneHeight)
                 tryDatabaseCountOfTours()
             else:
+                for x in listOfToursVar:
+                    if x == name:
+                        name += "*"
                 newTour.destroy()
                 labelMessageMain.config(text="Útvonal megtervezve!", fg="green")
                 if databaseInsert(name, departure, destination, tourInfo, waypoints) == 0:
                     updateList(name)
+                    staticMap(tourInfo[0], tourInfo[1], tourInfo[3], tourInfo[2], mapType,
+                              detailsPaneWidth, mapPaneHeight)
                 tryDatabaseCountOfTours()
         elif len(departure) > 50 or len(destination) > 50 or len(name) > 50:
             labelMessageNew.config(text="A helyszínek és a túra neve sem\nlehetnek hosszabbak 50 karakternél!",
@@ -123,6 +132,8 @@ def addWindow():
         selectedColor = str(colorchooser.askcolor(title="Szín kiválasztása")[1])
         if selectedColor != "None":
             buttonWaypointColorChange.config(text="", bg=selectedColor)
+        else:
+            selectedColor = "#3B5998"
 
     def colorDefault():
         global selectedColor
@@ -229,7 +240,7 @@ def tryDatabaseDropPrompt():
                     listOfToursVar.pop(1)
             lOT = Variable(value=listOfToursVar)
             listOfTours.config(listvariable=lOT)
-
+            clearFields()
         else:
             labelMessageMain.config(text="Az adatbázist nem sikerült törölni!", fg="red")
 
@@ -290,13 +301,80 @@ def displayRecord(selectedElement):
     labelValueDuration.config(text=option[5])
     labelValueDistance.config(text=option[6])
 
-    image = Image.open(("%d.png") % option[0])
+    image = Image.open(("%s\\%d.png") % (imagesAbsolutePath, option[0]))
     img = ImageTk.PhotoImage(image)
-    labelMapImage = Label(mapPane, image=img)
+    labelMapImage.config(image=img)
     labelMapImage.image = img
     labelMapImage.place(x=0, y=0)
 
+    waypoints = databaseSelectWaypoints(option[0])
+    for w in range(len(waypoints)):
+        labelValueWaypoint[w].config(text=waypoints[w][0], fg=waypoints[w][1].replace('-', '#'))
+        counter1 = 0
+        counter2 = 0
+        counter3 = 0
+        temp = waypoints[w][1].replace('#', '')
+        temp = temp.replace('-', '')
+        for y in temp:
+            if int(y, base=16) >= 10 and counter1 & 1 == 0:
+                counter2 += 1
+            elif int(y, base=16) >= 10:
+                counter3 += 1
+            counter1 += 1
+        if counter2 >= 2 and counter3 >= 1:
+            labelValueWaypoint[w].config(bg="black")
+        if len(waypoints) > 9 and w == 8:
+            labelValueWaypoint[w].config(text=("...és további %d" % (len(waypoints) - 8)), bg="white", fg="black")
+            break
 
+
+def clearFields():
+    labelValueId.config(text="")
+    labelValueName.config(text="")
+    labelValueType.config(text="")
+    labelValueDestination.config(text="")
+    labelValueDeparture.config(text="")
+    labelValueDuration.config(text="")
+    labelValueDistance.config(text="")
+    labelMapImage.config(image="")
+    for q in range(9):
+        labelValueWaypoint[q].config(text="", bg="white")
+
+
+def tryDatabaseDeleteTourPrompt():
+    if len(listOfTours.curselection()) > 0:
+        if listOfTours.curselection()[0] != 0:
+            def tryDeleteTour():
+                deleter.destroy()
+                selectedElement = listOfToursVar[listOfTours.curselection()[0]]
+                if databaseDeleteTour(selectedElement) == 0:
+                    labelMessageMain.config(text="Túra törölve!", fg="green")
+                    listOfToursVar.remove(selectedElement)
+                    lOT = Variable(value=listOfToursVar)
+                    listOfTours.config(listvariable=lOT)
+                    tryDatabaseCountOfTours()
+                    clearFields()
+                else:
+                    labelMessageMain.config(text="A túrát nem sikerült törölni!", fg="red")
+
+            deleter = Toplevel()
+            deleter.title("Túra törlése")
+            iconWarning = PhotoImage(file='warning.png')
+            deleter.iconphoto(False, iconWarning)
+            deleter.focus_force()
+            deleter.grab_set()
+
+            deleter.geometry(geometryGenerator(280, 80))
+            deleter.resizable(False, False)
+
+            labelQuestion = Label(deleter, text="Biztosan törölni akarod a túrát?")
+            labelQuestion.place(x=0, y=0, width=280, height=25)
+            labelWarning = Label(deleter, text="Ez a művelet nem vonható vissza!", fg="red")
+            labelWarning.place(x=0, y=25, width=280, height=25)
+            buttonYes = Button(deleter, text="Igen", command=tryDeleteTour)
+            buttonYes.place(x=55, y=50, width=70, height=25)
+            buttonNo = Button(deleter, text="Nem", command=deleter.destroy)
+            buttonNo.place(x=150, y=50, width=70, height=25)
 
 mainWindow = Tk()
 
@@ -319,12 +397,8 @@ header = Frame(mainWindow, bg="light grey", width=mainWindowWidth, height=header
 header.place(x=0, y=0)
 labelRegistered = Label(header, text="Elmentett túrák száma: 0", bg="light grey")
 labelRegistered.place(x=20, y=(headerHeight - 20) / 2)
-keywords = StringVar()
-searchBar = Entry(header, textvariable=keywords, width=70)
-searchBar.place(x=200, y=(headerHeight - 20) / 2)
-buttonSearch = Button(header, text="Keresés")
-buttonSearch.place(x=mainWindowWidth - 70, y=(headerHeight - 20) / 3)
-
+labelHeader = Label(header, text="TourPlannerPy - Túratervező alkalmazás", bg="light grey")
+labelHeader.place(x=175, y=0, width=mainWindowWidth - 175, height=headerHeight)
 
 footerHeight = 50
 footer = Frame(mainWindow, bg="light grey", width=mainWindowWidth, height=footerHeight)
@@ -333,7 +407,6 @@ rCB_str = "Ne kérdezzen rá kilépéskor"
 rememberCheckBox = Checkbutton(footer, text=rCB_str, variable=remember, bg="light grey",
                                activebackground="light grey", command=databaseUpdateRemember)
 rememberCheckBox.place(x=mainWindowWidth - 167, y=0, height=footerHeight)
-
 
 labelMessageMain = Label(footer, text="", bg="light grey")
 labelMessageMain.place(x=10, y=0, height=footerHeight)
@@ -344,7 +417,7 @@ detailsPaneHeight = mainWindowHeight - headerHeight - footerHeight
 detailsPane = Frame(mainWindow, width=detailsPaneWidth, height=detailsPaneHeight)
 detailsPane.place(x=listWidth, y=headerHeight)
 
-mapPaneHeight = int(detailsPaneHeight / 2)
+mapPaneHeight = int(detailsPaneHeight / 2) - 2
 mapPane = Frame(detailsPane, width=detailsPaneWidth, height=mapPaneHeight)
 mapPane.place(x=0, y=0)
 labelMapPanePlaceholder = Label(mapPane, text="nincs beolvasott túra")
@@ -352,35 +425,57 @@ labelMapPanePlaceholder.place(x=0, y=0, width=detailsPaneWidth, height=mapPaneHe
 
 fieldWidth1 = int(detailsPaneWidth / 3)
 fieldWidth2 = int(detailsPaneWidth / 4)
-labelFieldId = Label(detailsPane, text="Azonosító")
+labelFieldId = Label(detailsPane, text="azonosító")
 labelFieldId.place(x=0, y=mapPaneHeight + 50, height=25, width=fieldWidth2)
-labelFieldName = Label(detailsPane, text="Név")
+labelFieldName = Label(detailsPane, text="név")
 labelFieldName.place(x=0, y=mapPaneHeight, height=25, width=fieldWidth1)
-labelFieldType = Label(detailsPane, text="Típus")
+labelFieldType = Label(detailsPane, text="típus")
 labelFieldType.place(x=fieldWidth2, y=mapPaneHeight + 50, height=25, width=fieldWidth2)
-labelFieldDeparture = Label(detailsPane, text="Start")
+labelFieldDeparture = Label(detailsPane, text="start")
 labelFieldDeparture.place(x=fieldWidth1, y=mapPaneHeight, height=25, width=fieldWidth1)
-labelFieldDestination = Label(detailsPane, text="Úticél")
+labelFieldDestination = Label(detailsPane, text="úticél")
 labelFieldDestination.place(x=2 * fieldWidth1, y=mapPaneHeight, height=25, width=detailsPaneWidth - 2 * fieldWidth1)
-labelFieldDuration = Label(detailsPane, text="Időtartam")
+labelFieldDuration = Label(detailsPane, text="időtartam")
 labelFieldDuration.place(x=2 * fieldWidth2, y=mapPaneHeight + 50, height=25, width=fieldWidth2)
-labelFieldDistance = Label(detailsPane, text="Távolság")
+labelFieldDistance = Label(detailsPane, text="távolság")
 labelFieldDistance.place(x=3 * fieldWidth2, y=mapPaneHeight + 50, height=25, width=detailsPaneWidth - 3 * fieldWidth2)
-labelValueId = Label(detailsPane, text="", bg="white")
+labelValueId = Label(detailsPane, text="", bg="white", justify="left")
 labelValueId.place(x=0, y=mapPaneHeight + 75, height=25, width=fieldWidth2)
-labelValueName = Label(detailsPane, text="", bg="white")
+labelValueName = Label(detailsPane, text="", bg="white", justify="left")
 labelValueName.place(x=0, y=mapPaneHeight + 25, height=25, width=fieldWidth1)
-labelValueType = Label(detailsPane, text="", bg="white")
+labelValueType = Label(detailsPane, text="", bg="white", justify="left")
 labelValueType.place(x=fieldWidth2, y=mapPaneHeight + 75, height=25, width=fieldWidth2)
-labelValueDeparture = Label(detailsPane, text="", bg="white")
+labelValueDeparture = Label(detailsPane, text="", bg="white", justify="left")
 labelValueDeparture.place(x=fieldWidth1, y=mapPaneHeight + 25, height=25, width=fieldWidth1)
-labelValueDestination = Label(detailsPane, text="", bg="white")
+labelValueDestination = Label(detailsPane, text="", bg="white", justify="left")
 labelValueDestination.place(x=2 * fieldWidth1, y=mapPaneHeight + 25,
                             height=25, width=detailsPaneWidth - 2 * fieldWidth1)
-labelValueDuration = Label(detailsPane, text="", bg="white")
+labelValueDuration = Label(detailsPane, text="", bg="white", justify="left")
 labelValueDuration.place(x=2 * fieldWidth2, y=mapPaneHeight + 75, height=25, width=fieldWidth2)
-labelValueDistance = Label(detailsPane, text="", bg="white")
+labelValueDistance = Label(detailsPane, text="", bg="white", justify="left")
 labelValueDistance.place(x=3 * fieldWidth2, y=mapPaneHeight + 75, height=25, width=detailsPaneWidth - 3 * fieldWidth2)
+labelMapImage = Label(mapPane)
+labelFieldWaypoints = Label(detailsPane, text="jelölők")
+labelFieldWaypoints.place(x=0, y=mapPaneHeight + 100, width=detailsPaneWidth, height=25)
+waypointsPane = Frame(detailsPane, bg="white")
+waypointsPane.place(x=0, y=mapPaneHeight + 125, width=detailsPaneWidth, height=detailsPaneHeight - mapPaneHeight
+                                                                               - footerHeight - 100)
+labelValueWaypoint = []
+for i in range(9):
+    labelValueWaypoint.append(Label(waypointsPane, bg="white"))
+labelValueWaypoint[0].place(x=0, y=0, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[1].place(x=detailsPaneWidth / 3, y=0, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[2].place(x=2 * detailsPaneWidth / 3, y=0, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[3].place(x=0, y=25, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[4].place(x=detailsPaneWidth / 3, y=25, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[5].place(x=2 * detailsPaneWidth / 3, y=25, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[6].place(x=0, y=50, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[7].place(x=detailsPaneWidth / 3, y=50, width=detailsPaneWidth / 3, height=25)
+labelValueWaypoint[8].place(x=2 * detailsPaneWidth / 3, y=50, width=detailsPaneWidth / 3, height=25)
+
+buttonRemoveTour = Button(detailsPane, text="Túra törlése", fg="red", command=tryDatabaseDeleteTourPrompt,
+                          activeforeground="red")
+buttonRemoveTour.place(x=detailsPaneWidth - 100, y=detailsPaneHeight - footerHeight + 25, width=100, height=25)
 
 listOfToursVar = ['+ Új túra hozzáadása...']
 lOT = Variable(value=listOfToursVar)
@@ -391,7 +486,8 @@ buttonSelect = Button(mainWindow, text="Kiválaszt", command=selectListItem)
 buttonSelect.place(x=0, y=mainWindowHeight - footerHeight - 25, width=listWidth)
 
 buttonDatabaseCreate = Button(footer, text="Adatbázis\nlétrehozása", command=tryDatabaseCreate)
-buttonDatabaseDrop = Button(footer, text="Adatbázis\ntörlése", fg="red", command=tryDatabaseDropPrompt, state="disabled")
+buttonDatabaseDrop = Button(footer, text="Adatbázis\ntörlése", fg="red", command=tryDatabaseDropPrompt,
+                            activeforeground="red", state="disabled")
 buttonDatabaseDrop.place(x=mainWindowWidth - 167 - 60, y=0, height=footerHeight, width=60)
 buttonDatabaseCreate.place(x=mainWindowWidth - 167 - 60 - 80, y=0, height=footerHeight, width=80)
 

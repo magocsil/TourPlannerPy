@@ -2,12 +2,11 @@ import json
 import requests
 from databaseAccess import *
 import time
-import databaseAccess
 
 key = 'ELGlMojjoaQyqNz3wB4aM5aXYNsgr3Jk'
 
 
-def directions(departure, destination, waypoints, mapType, width, height):
+def directions(departure, destination, waypoints):
     urlDir = 'https://www.mapquestapi.com/directions/v2/route?key=%s&from=%s&to=%s&routeType=pedestrian' \
             % (key, departure, destination)
     urlDir = urlDir.replace(' ', '+', -1)
@@ -32,10 +31,7 @@ def directions(departure, destination, waypoints, mapType, width, height):
         distance = ""
         session = ""
 
-    isValidMap = staticMap(duration, distance, waypoints, session, mapType, width, height)
-    if isValidMap == False:
-        duration = ""
-    return [duration, distance]
+    return [duration, distance, session, waypoints]
 
 
 def staticMap(duration, distance, waypoints, session, mapType, width, height):
@@ -56,7 +52,6 @@ def staticMap(duration, distance, waypoints, session, mapType, width, height):
         topLeft = [-90, 180]
         bottomRight = [90, -180]
         countOfWaypoints = 0
-        isDataAvailable = False
         for s in waypoints:
             if countOfWaypoints == 0:
                 ref = s
@@ -66,7 +61,6 @@ def staticMap(duration, distance, waypoints, session, mapType, width, height):
             rGC = requests.get(urlGC)
             dataGC = json.loads(rGC.text)
             if dataGC["info"]["statuscode"] == 0:
-                isDataAvailable = True
                 lat = float(dataGC["results"][0]["locations"][0]["latLng"]["lat"])
                 lng = float(dataGC["results"][0]["locations"][0]["latLng"]["lng"])
                 if lat > topLeft[0]:
@@ -78,9 +72,7 @@ def staticMap(duration, distance, waypoints, session, mapType, width, height):
                 if lng > bottomRight[1]:
                     bottomRight[1] = lng
                 countOfWaypoints += 1
-        if not isDataAvailable:
-            return isDataAvailable
-        elif countOfWaypoints == 1:
+        if countOfWaypoints == 1:
             urlStat += '&center=%s' % ref
         else:
             urlStat += '&boundingBox=%f,%f,%f,%f' % (topLeft[0], topLeft[1], bottomRight[0], bottomRight[1])
@@ -88,12 +80,9 @@ def staticMap(duration, distance, waypoints, session, mapType, width, height):
 
     rStat = requests.get(urlStat)
 
-    countOfMaps = databaseCountOfTours() + 1
-    with open('%s\\%d.png' % (imagesAbsolutePath, countOfMaps), 'wb') as newMap:
+    with open('%s\\%d.png' % (imagesAbsolutePath, databaseSelectLastId()), 'wb') as newMap:
         try:
             newMap.write(rStat.content)
         except Exception as e:
             print("[%s] Hiba (térkép nyomtatása): %s" % (time.strftime("%H:%M:%S", time.localtime()), e))
-            return False
 
-    return True
