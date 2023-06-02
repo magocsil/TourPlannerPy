@@ -70,9 +70,10 @@ def addWindow():
         departure = entryDep.get()
         destination = entryDest.get()
         name = entryName.get()
+
         mapType = mapTypes[optionMapType.get()]
-        if (((departure != "" and len(departure) <= 50) or (destination != "" and len(destination) <= 50))
-            and departure != destination or len(waypoints) > 0) and len(name) <= 50 and name != "":
+        if (((departure != "" and len(departure) <= 100) or (destination != "" and len(destination) <= 100))
+            and departure != destination or len(waypoints) > 0) and len(name) <= 100 and name != "":
             p = []
             for s in waypoints:
                 if s == departure:
@@ -106,8 +107,8 @@ def addWindow():
                     staticMap(tourInfo[0], tourInfo[1], tourInfo[3], tourInfo[2], mapType,
                               detailsPaneWidth, mapPaneHeight)
                 tryDatabaseCountOfTours()
-        elif len(departure) > 50 or len(destination) > 50 or len(name) > 50:
-            labelMessageNew.config(text="A helyszínek és a túra neve sem\nlehetnek hosszabbak 50 karakternél!",
+        elif len(departure) > 100 or len(destination) > 100 or len(name) > 100:
+            labelMessageNew.config(text="A helyszínek és a túra neve sem\nlehetnek hosszabbak 100 karakternél!",
                                    fg="red")
         else:
             labelMessageNew.config(text="A startot és/vagy a célt meg kell adni,\nvagy legalább egy jelölőt lerakni!",
@@ -156,15 +157,15 @@ def addWindow():
             if t == nWP:
                 labelMessageNew.config(text="Itt már van jelölő!", fg="red")
                 return
-        if nWP != "" and len(nWP) <= 50:
+        if nWP != "" and len(nWP) <= 100:
             global selectedColor
             waypoints[nWP] = selectedColor.replace("#", "-")
             colorDefault()
             optionMenuWaypoints["menu"].add_command(label=nWP, command=tk._setit(optionWaypoints, nWP))
             newTourWaypointPlace.set("")
             labelMessageNew.config(text="Jelölő hozzáadva!", fg="green")
-        elif len(nWP) >= 50:
-            labelMessageNew.config(text="A helyszínek nem lehetnek hosszabbak 50 karakternél!")
+        elif len(nWP) >= 100:
+            labelMessageNew.config(text="A helyszínek nem lehetnek hosszabbak 100 karakternél!")
         else:
             labelMessageNew.config(text="Előbb meg kell adni egy helyszínt!", fg="red")
 

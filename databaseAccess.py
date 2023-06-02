@@ -1,5 +1,4 @@
 import shutil
-
 import _mysql_connector
 import mysql.connector as con
 import time
@@ -58,10 +57,10 @@ def databaseTablesCreate():
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS tours (
                         id INT AUTO_INCREMENT PRIMARY KEY,
-                        name VARCHAR(50),
+                        name VARCHAR(100),
                         type ENUM('Útvonal', 'Jelölők'),
-                        departure VARCHAR(50),
-                        destination VARCHAR(50),
+                        departure VARCHAR(100),
+                        destination VARCHAR(100),
                         duration VARCHAR(12),
                         distance VARCHAR(12)
                     )
@@ -69,7 +68,7 @@ def databaseTablesCreate():
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS waypoints (
                         id INT,
-                        location VARCHAR(50),
+                        location VARCHAR(100),
                         color VARCHAR(7)
                     )
                 """)
@@ -254,7 +253,7 @@ def databaseSelectWaypoints(selectedElement):
                     SELECT location, color FROM tourplannerpy.waypoints WHERE id = %d 
                 """ % selectedElement)
                 result = cursor.fetchall()
-                if result[0] is not None:
+                if len(result) > 0 and result[0] is not None:
                     return result
                 else:
                     return []
