@@ -3,7 +3,7 @@
 A **TourPlannerPy** egy **Python**ban írt túratervező alkalmazás, amely a **Tkinter** könyvtár által nyújtott lehetőségekkel él a grafikus felhasználói felület megvalósítása során. Az útvonalakat **MySQL** szerver segítségével tárolja, így annak működése, párhuzamos futása elengedhetetlen a szoftver működéséhez. A szerver adatai a **databaseAccess.py** fájlban adhatók meg. Alapértelmezettként hostnak *localhost*, felhasználónak *root* és jelszónak is *root* van megadva. A szoftver az útvonalat és/vagy jelölőket térképen jeleníti meg, melyek elkészítéséhez a **MapQuest API**-t használtam.
 
 ## Felhasznált technológia (környezetek, könyvtárak, alkalmazások)
-- Python 3.10 (Tkinter, MySQL Connector/Python, time, os, json, shutil, request, PIL)
+- Python 3.10 (Tkinter, MySQL Connector/Python, time, os, json, shutil, request, PIL, webbrowser)
 - PyCharm 2023.1.2 (Community Edition)
 - MySQL Community Server 8.0
 - MySQL Workbench 8.0 CE
@@ -37,7 +37,8 @@ A **TourPlannerPy** egy **Python**ban írt túratervező alkalmazás, amely a **
 - Mivel túrázás közben megesik, hogy egy környéket járunk be konkrét útvonal nélkül, lehetőség van térképet generálni útvonal nélkül is. Ehhez legalább az egyik útvonalmezőt - ilyen a kezdőpont- és a végpontmező - üresen kell hagyni, és vagy jelölőket kell hozzáadni, hozzáadni, vagy a másik mezőt kitölteni.
 - A túra és a különböző helyszínek nevei nem lehetnek hosszabbak 100 karakternél.
 - A tervezés gombra kattintva a MapQuest megpróbálja megtalálni a keresett gyalogos útvonalat. Ha ez sikerül, akkor elküldi az adatbázisnak az adatokat és bezárja a tervezőablakot. A túra kap egy ID-t, amely a fájlok könyvtárában létrehozott *output* mappában és az adatbázisban egyaránt azonosítja őket. Ha ez nem sikerül, a tervezőablak nem zárul be, és megjelenik rajta egy hibaüzenet.
-- Két túrának nem lehet ugyanaz a neve. Ha mégis ilyen eset adódna, az új példány nevét bővíti egy *\** karakterrel.
+- A túra kiindulópontja és végállomása nem egyezhet meg, és nem létezhet ezekre mutató jelölő sem.
+- Két túrának nem lehet ugyanaz a neve. Ha mégis ilyen eset adódna, az új példány neve egy * karakterrel bővül.
 - A tárolt túrák száma a főablak bal felső sarkában jelenik meg.
 
 ![image](https://github.com/magocsil/TourPlannerPy/assets/40305206/201ffb91-2df7-4b2d-a2de-98a720b27089)
@@ -75,6 +76,7 @@ A **main.py** tartalmazza a felhasználói felületet és az ahhoz tartozó logi
 - *clearFields()*: A főablak jobb oldaláról eltünteti a korábban megjelenített túra összes részletét.
 - *tryDatabaseDeleteTourPrompt()*: A túra törlése előtti felugró ablakot készíti el.
 - *tryDeleteTour()*: Törölteti az adatbázissal a kiválasztott túrát.
+- *openGitHub()*: Megnyitja a projekt remote repository-ját a GitHub-on.
 
 ### map.py
 A **map.py** kéri le az adatokat a MapQuest-től, és szükség szerint formázza őket. A térképet is ez nyomtatja ki *.png* fájlba. *GET* kérelmekkel dolgozik. Függvényei:

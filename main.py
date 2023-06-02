@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import colorchooser
 from map import *
 from PIL import ImageTk, Image
+import webbrowser
 
 selectedColor = "#3B5998"
 
@@ -377,6 +378,10 @@ def tryDatabaseDeleteTourPrompt():
             buttonNo = Button(deleter, text="Nem", command=deleter.destroy)
             buttonNo.place(x=150, y=50, width=70, height=25)
 
+def openGitHub():
+    webbrowser.open("https://github.com/magocsil/TourPlannerPy.git")
+
+
 mainWindow = Tk()
 
 remember = IntVar()
@@ -491,6 +496,8 @@ buttonDatabaseDrop = Button(footer, text="Adatbázis\ntörlése", fg="red", comm
                             activeforeground="red", state="disabled")
 buttonDatabaseDrop.place(x=mainWindowWidth - 167 - 60, y=0, height=footerHeight, width=60)
 buttonDatabaseCreate.place(x=mainWindowWidth - 167 - 60 - 80, y=0, height=footerHeight, width=80)
+buttonInfo = Button(footer, text="GitHub", command=openGitHub)
+buttonInfo.place(x=mainWindowWidth - 167 - 80 - 60 - 60, y=0, height=footerHeight, width=60)
 
 tryDatabaseCreate()
 if databaseRememberCheck() == 1:
