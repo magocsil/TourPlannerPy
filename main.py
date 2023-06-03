@@ -311,6 +311,9 @@ def displayRecord(selectedElement):
 
     waypoints = databaseSelectWaypoints(option[0])
     for w in range(len(waypoints)):
+        if len(waypoints) < 9:
+            for v in range(len(waypoints), 9):
+                labelValueWaypoint[v].config(text="", bg="white")
         labelValueWaypoint[w].config(text=waypoints[w][0], fg=waypoints[w][1].replace('-', '#'))
         counter1 = 0
         counter2 = 0
