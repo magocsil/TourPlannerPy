@@ -79,9 +79,9 @@ A **main.py** tartalmazza a felhasználói felületet és az ahhoz tartozó logi
 - *openGitHub()*: Megnyitja a projekt remote repository-ját a GitHub-on.
 
 ### map.py
-A **map.py** kéri le az adatokat a MapQuest-től, és szükség szerint formázza őket. A térképet is ez nyomtatja ki *.png* fájlba. *GET* kérelmekkel dolgozik. Függvényei:
+A **map.py** kéri le az adatokat a MapQuest-től, és szükség szerint formázza őket. A térképet is ez nyomtatja ki *.png* fájlba. *GET* kérésekkel dolgozik. Függvényei:
 - *directions(departure, destination, waypoints)*: *Útvonal* típusú túra esetén az útvonaltervezés a feladata, *Jelölők* típusú rekord esetén pedig a megfelelő módon formázza az adatokat. A **Directions API**-t használja.
-- *staticMap(duration, distance, waypoints, session, mapType, width, height)*: A végső térképet készíti el és kiírja azt egy fájlba, amelynek neve a túra azonosítója az adatbázisban.
+- *staticMap(duration, distance, waypoints, session, mapType, width, height)*: A végső térképet készíti el és kiírja azt egy fájlba, amelynek neve a túra azonosítója az adatbázisban. A **Static Map API**-t használja.
 
 ### databaseAccess.py
 A már korábban is említett **databaseAccess.py** az egyetlen fájl, amely ténylegesen az adatbázisnak küld utasításokat. Ha valami félremegy, a konzolra hibaüzenetet nyomtat. A *with* és a *try* felváltott használata miatt a hibaüzenet formátuma nem egységes. Függvényei:
