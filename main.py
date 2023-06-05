@@ -214,6 +214,7 @@ def tryDatabaseCreate():
         tryDatabaseTablesCreate()
     else:
         labelMessageMain.config(text="Az adatbázis-kapcsolatot nem sikerült létrehozni!", fg="red")
+        buttonSelect.config(state="disabled")
 
 
 def tryDatabaseDropPrompt():
@@ -294,6 +295,7 @@ def tryDatabaseInit():
 
 
 def displayRecord(selectedElement):
+    clearFields()
     option = databaseSelect(selectedElement)
     labelValueId.config(text=str(option[0]))
     labelValueName.config(text=option[1])
@@ -311,9 +313,6 @@ def displayRecord(selectedElement):
 
     waypoints = databaseSelectWaypoints(option[0])
     for w in range(len(waypoints)):
-        if len(waypoints) < 9:
-            for v in range(len(waypoints), 9):
-                labelValueWaypoint[v].config(text="", bg="white")
         labelValueWaypoint[w].config(text=waypoints[w][0], fg=waypoints[w][1].replace('-', '#'))
         counter1 = 0
         counter2 = 0
@@ -380,6 +379,7 @@ def tryDatabaseDeleteTourPrompt():
             buttonYes.place(x=55, y=50, width=70, height=25)
             buttonNo = Button(deleter, text="Nem", command=deleter.destroy)
             buttonNo.place(x=150, y=50, width=70, height=25)
+
 
 def openGitHub():
     webbrowser.open("https://github.com/magocsil/TourPlannerPy.git")
